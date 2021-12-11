@@ -1,4 +1,3 @@
-using hexa_droid;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -6,11 +5,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
+builder.Services.AddScoped<ApiContext, ApiContext>();
 builder.Services.AddDbContext<ApiContext>(options => options.UseInMemoryDatabase("Users"));
 
 
 var app = builder.Build();
-DataGenerator.Initialize(app.Services);
+//DataGenerator.Initialize(app.Services);
 // Configure the HTTP request pipeline.
 if (builder.Environment.IsDevelopment())
 {
@@ -36,20 +36,38 @@ app.UseCors(p =>
 app.MapGet("/users", (ApiContext context) =>
 {
     app.Logger.LogInformation("Returning users");
+    if (!context.Users.Any())
+    {
+        context.Users.AddRange(
+        new User
+        {
+            Id = 1,
+            Name = "Josh",
+            Email = "joshh@email.com",
+        //Attributes = new Dictionary<string, string> { { "age", "29.5" }, { "eyes", "yes" } },
+    },
+        new User
+        {
+            Id = 2,
+            Name = "Toni",
+            Email = "tonii@email.com",
+        //Attributes = new Dictionary<string, string> { { "age", "29" }, { "eyes", "yes" } },
+    });
+
+        context.SaveChanges();
+    }
 
     var response = context.Users.ToListAsync();
 
     return Results.Ok(response.Result);
 }).WithName("GetUsers");
 
-app.MapPost("/users", async (http) =>
+app.MapPost("/users", async (HttpContext http, User u, ApiContext context) =>
 {
-    var user = JsonSerializer.Deserialize<User>(http.Request.Body);
-    app.Logger.LogInformation($"Creating user {user?.Name}");
-    await using var context = app.Services.GetService<ApiContext>();
-    await context.Users.AddAsync(user);
+    app.Logger.LogInformation($"Creating user {u?.Name}");
+    await context.Users.AddAsync(u);
     await context.SaveChangesAsync();
-    http.Response.StatusCode = 201;
+    return Results.Created("/users", u);
 }).WithName("CreateUser");
 
 app.Run();
