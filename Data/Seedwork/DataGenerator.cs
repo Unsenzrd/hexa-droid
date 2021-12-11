@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace hexa_droid
+namespace hexa_droid.Data.Seedwork
 {
     public class DataGenerator
     {

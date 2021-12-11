@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
@@ -44,15 +43,15 @@ app.MapGet("/users", (ApiContext context) =>
             Id = 1,
             Name = "Josh",
             Email = "joshh@email.com",
-        //Attributes = new Dictionary<string, string> { { "age", "29.5" }, { "eyes", "yes" } },
-    },
+            //Attributes = new Dictionary<string, string> { { "age", "29.5" }, { "eyes", "yes" } },
+        },
         new User
         {
             Id = 2,
             Name = "Toni",
             Email = "tonii@email.com",
-        //Attributes = new Dictionary<string, string> { { "age", "29" }, { "eyes", "yes" } },
-    });
+            //Attributes = new Dictionary<string, string> { { "age", "29" }, { "eyes", "yes" } },
+        });
 
         context.SaveChanges();
     }

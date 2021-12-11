@@ -6,13 +6,13 @@
     <RootNamespace>hexa_droid</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3"/>
-    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0"/>
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0"/>
-    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1"/>
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.0"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="6.0.0"/>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="6.0.0" />
   </ItemGroup>
 </Project>
