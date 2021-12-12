@@ -24,6 +24,8 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = string.Empty;
 });
 
+app.UseExceptionHandler("/error");
+
 app.UseCors(p =>
 {
     p.AllowAnyOrigin();
@@ -43,14 +45,14 @@ app.MapGet("/users", (ApiContext context) =>
             Id = 1,
             Name = "Josh",
             Email = "joshh@email.com",
-            //Attributes = new Dictionary<string, string> { { "age", "29.5" }, { "eyes", "yes" } },
+            Attributes = new UserAttributes { Age = 29, IsEnabled = true }
         },
         new User
         {
             Id = 2,
             Name = "Toni",
             Email = "tonii@email.com",
-            //Attributes = new Dictionary<string, string> { { "age", "29" }, { "eyes", "yes" } },
+            Attributes = new UserAttributes { Age = 29, IsEnabled = true }
         });
 
         context.SaveChanges();
@@ -59,14 +61,45 @@ app.MapGet("/users", (ApiContext context) =>
     var response = context.Users.ToListAsync();
 
     return Results.Ok(response.Result);
+
 }).WithName("GetUsers");
+
+app.MapGet("/users/{id}", (ApiContext context, int id) =>
+{
+    app.Logger.LogInformation($"Returning user by id: {id}");
+
+
+    var response = context.Users.FirstOrDefault(u => u.Id == id);
+
+    return Results.Ok(response);
+
+}).WithName("GetUserById");
 
 app.MapPost("/users", async (HttpContext http, User u, ApiContext context) =>
 {
     app.Logger.LogInformation($"Creating user {u?.Name}");
+
     await context.Users.AddAsync(u);
     await context.SaveChangesAsync();
+
     return Results.Created("/users", u);
+
 }).WithName("CreateUser");
+
+app.MapPut("/users/{id}", async (HttpContext http, User u, ApiContext context, int id) =>
+{
+    app.Logger.LogInformation($"Creating user {u?.Name}");
+
+    var user = context.Users.FirstOrDefault(u => u.Id == id);
+    user.Email = u.Email;
+    context.Users.Update(user);
+    await context.SaveChangesAsync();
+
+    return Results.Ok(u);
+
+}).WithName("UpdateUserById");
+
+/* Misc */
+app.MapGet("/error", () => Results.Problem(statusCode: 500));
 
 app.Run();
