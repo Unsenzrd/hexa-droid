@@ -1,8 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 public class User
 {
+    public User()
+    {
+        Attributes = new UserAttributes();
+    }
+
     [Key]
     [Required]
     public int Id { get; set; }
@@ -14,8 +20,9 @@ public class User
 }
 
 [Keyless]
+[NotMapped]
 public class UserAttributes
-{    
+{
     public int Age { get; set; }
     public bool IsEnabled { get; set; }
 }

@@ -1,22 +1,28 @@
+using hexa_droid.Services;
+using hexa_droid.Services.Interface;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+/* Middleware */
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
+
+/* Context */
 builder.Services.AddScoped<ApiContext, ApiContext>();
 builder.Services.AddDbContext<ApiContext>(options => options.UseInMemoryDatabase("Users"));
 
+/* Register Services */
+builder.Services.AddTransient<IUserService, UserService>();
+
 
 var app = builder.Build();
-//DataGenerator.Initialize(app.Services);
-// Configure the HTTP request pipeline.
 if (builder.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
 }
 
-// Enable middleware to serve generated Swagger as a JSON endpoint.
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -34,44 +40,23 @@ app.UseCors(p =>
 });
 
 /* Users */
-app.MapGet("/users", (ApiContext context) =>
+app.MapGet("/users", async (IUserService _userService) =>
 {
     app.Logger.LogInformation("Returning users");
-    if (!context.Users.Any())
-    {
-        context.Users.AddRange(
-        new User
-        {
-            Id = 1,
-            Name = "Josh",
-            Email = "joshh@email.com",
-            Attributes = new UserAttributes { Age = 29, IsEnabled = true }
-        },
-        new User
-        {
-            Id = 2,
-            Name = "Toni",
-            Email = "tonii@email.com",
-            Attributes = new UserAttributes { Age = 29, IsEnabled = true }
-        });
 
-        context.SaveChanges();
-    }
+    var response = await _userService.GetAllUsers();
 
-    var response = context.Users.ToListAsync();
+    return Results.Ok(response);
 
-    return Results.Ok(response.Result);
+}).WithName("GetAllUsers");
 
-}).WithName("GetUsers");
-
-app.MapGet("/users/{id}", (ApiContext context, int id) =>
+app.MapGet("/users/{id}", async (int id, IUserService _userService) =>
 {
     app.Logger.LogInformation($"Returning user by id: {id}");
 
+    var response = await _userService.GetUserById(id);
 
-    var response = context.Users.FirstOrDefault(u => u.Id == id);
-
-    return Results.Ok(response);
+    return response is null ? Results.NotFound($"No user found for id: {id}") : Results.Ok(response);
 
 }).WithName("GetUserById");
 
@@ -92,7 +77,7 @@ app.MapPut("/users/{id}", async (HttpContext http, User u, ApiContext context, i
 
     var user = context.Users.FirstOrDefault(u => u.Id == id);
     user.Email = u.Email;
-    context.Users.Update(user);
+    context.Users.Update(user);    
     await context.SaveChangesAsync();
 
     return Results.Ok(u);
