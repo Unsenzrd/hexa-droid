@@ -6,6 +6,8 @@
     <RootNamespace>hexa_droid</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Ardalis.GuardClauses" Version="3.3.0" />
+    <PackageReference Include="MinimalApis.Extensions" Version="0.4.1-pre.20211113.13" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="7.2.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />

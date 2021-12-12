@@ -1,6 +1,12 @@
+using Ardalis.GuardClauses;
 using hexa_droid.Services;
 using hexa_droid.Services.Interface;
+using hexa_droid.Utility;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Net.Http.Headers;
+using MinimalApis.Extensions.Results;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors();
+builder.Services.AddProblemDetailsDeveloperPageExceptionFilter();
 
 /* Context */
 builder.Services.AddScoped<ApiContext, ApiContext>();
@@ -44,30 +51,33 @@ app.MapGet("/users", async (IUserService _userService) =>
 {
     app.Logger.LogInformation("Returning users");
 
-    var response = await _userService.GetAllUsers();
+    var result = await _userService.GetAllUsers();
 
-    return Results.Ok(response);
+    return Results.Ok(result);
 
 }).WithName("GetAllUsers");
 
 app.MapGet("/users/{id}", async (int id, IUserService _userService) =>
 {
+    Guard.Against.Negative(id, nameof(id));
+
     app.Logger.LogInformation($"Returning user by id: {id}");
 
-    var response = await _userService.GetUserById(id);
+    var result = await _userService.GetUserById(id);
 
-    return response is null ? Results.NotFound($"No user found for id: {id}") : Results.Ok(response);
+    return result is null ? Results.NotFound($"No user found for id: {id}") : Results.Ok(result);
 
 }).WithName("GetUserById");
 
-app.MapPost("/users", async (HttpContext http, User u, ApiContext context) =>
+app.MapPost("/users", async (User user, IUserService _userService) =>
 {
-    app.Logger.LogInformation($"Creating user {u?.Name}");
+    Guard.Against.Null(user, nameof(user));
 
-    await context.Users.AddAsync(u);
-    await context.SaveChangesAsync();
+    app.Logger.LogInformation($"Creating user {user?.Name}");
 
-    return Results.Created("/users", u);
+    var result = _userService.CreateUser(user);
+
+    return Results.Created("/users", user);
 
 }).WithName("CreateUser");
 
@@ -85,6 +95,30 @@ app.MapPut("/users/{id}", async (HttpContext http, User u, ApiContext context, i
 }).WithName("UpdateUserById");
 
 /* Misc */
-app.MapGet("/error", () => Results.Problem(statusCode: 500));
+
+/* Error Handler */
+var problemJsonMediaType = new MediaTypeHeaderValue("application/problem+json");
+app.MapGet("/error", Results<Problem, StatusCode> (HttpContext context) =>
+{
+    var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+    var badRequestEx = error as BadHttpRequestException;
+    var statusCode = badRequestEx?.StatusCode ?? StatusCodes.Status500InternalServerError;
+
+    if (context.Request.GetTypedHeaders().Accept?.Any(h => problemJsonMediaType.IsSubsetOf(h)) == true)
+    {
+        var extensions = new Dictionary<string, object> { { "requestId", Activity.Current?.Id ?? context.TraceIdentifier } };
+
+        // JSON Problem Details
+        return error switch
+        {
+            BadHttpRequestException ex => Results.Extensions.Problem(detail: ex.Message, statusCode: ex.StatusCode, extensions: extensions),
+            _ => Results.Extensions.Problem(extensions: extensions)
+        };
+    }
+
+    // Plain text
+    return Results.Extensions.StatusCode(statusCode, badRequestEx?.Message ?? "An unhandled exception occurred while processing the request.");
+})
+   .ExcludeFromDescription();
 
 app.Run();
